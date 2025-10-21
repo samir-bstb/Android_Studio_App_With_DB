@@ -12,7 +12,7 @@ class DatabaseHelper(private val context: Context) : SQLiteOpenHelper(
     DATABASE_VERSION
 ) {
     companion object {
-        private const val DATABASE_NAME = "BD_APP"
+        private const val DATABASE_NAME = "BD_APP.db"
         private const val DATABASE_VERSION = 1
         private const val TABLE_PRODUCTS = "productos"
 
@@ -210,4 +210,5 @@ class DatabaseHelper(private val context: Context) : SQLiteOpenHelper(
 
         return product
     }
+
 }

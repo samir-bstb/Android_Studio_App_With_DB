@@ -186,6 +186,26 @@ class DatabaseHelper(private val context: Context) : SQLiteOpenHelper(
         return 1 // Retorna 1 si se actualizó correctamente
     }
 
+    // Actualizar precio de un producto por nombre
+    fun updateProductPriceByName(name: String, newPrice: Double): Int {
+        val db = writableDatabase
+        db.execSQL(
+            "UPDATE $TABLE_PRODUCTS SET $COLUMN_PRICE = ? WHERE $COLUMN_NAME = ?",
+            arrayOf(newPrice, name)
+        )
+        return 1 // Retorna 1 si se actualizó correctamente
+    }
+
+    // Actualizar precio y cantidad de un producto por nombre
+    fun updateProductByName(name: String, newPrice: Double, newQuantity: Int): Int {
+        val db = writableDatabase
+        db.execSQL(
+            "UPDATE $TABLE_PRODUCTS SET $COLUMN_PRICE = ?, $COLUMN_QUANTITY = ? WHERE $COLUMN_NAME = ?",
+            arrayOf(newPrice, newQuantity, name)
+        )
+        return 1 // Retorna 1 si se actualizó correctamente
+    }
+
     // Obtener un producto por nombre
     fun getProductByName(name: String): Products? {
         val db = readableDatabase
@@ -210,5 +230,4 @@ class DatabaseHelper(private val context: Context) : SQLiteOpenHelper(
 
         return product
     }
-
 }

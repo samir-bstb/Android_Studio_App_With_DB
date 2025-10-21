@@ -75,32 +75,56 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showEditOptions(product: Products) {
-        val options = arrayOf("Edit Quantity", "Delete Product")
-
+        val options = arrayOf("Edit Product", "Delete Product")
+        
         AlertDialog.Builder(this)
             .setTitle(product.name)
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> showEditQuantityDialog(product)
+                    0 -> showEditProductDialog(product)
                     1 -> showDeleteConfirmation(listOf(product.name))
                 }
             }
             .show()
     }
 
-    private fun showEditQuantityDialog(product: Products) {
-        val input = EditText(this).apply {
-            hint = "New quantity (current: ${product.quantity})"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+    private fun showEditProductDialog(product: Products) {
+        // Crear vista personalizada con dos campos
+        val dialogView = layoutInflater.inflate(android.R.layout.select_dialog_item, null)
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(50, 40, 50, 10)
         }
 
-        AlertDialog.Builder(this)
-            .setTitle("Edit Quantity - ${product.name}")
-            .setMessage("Current quantity: ${product.quantity}")
-            .setView(input)
-            .setPositiveButton("Update") { _, _ ->
-                val newQuantity = input.text.toString().toIntOrNull() ?: -1
+        val inputPrice = EditText(this).apply {
+            hint = "Price (current: ${"%.2f".format(product.price)})"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setText(product.price.toString())
+        }
 
+        val inputQuantity = EditText(this).apply {
+            hint = "Quantity (current: ${product.quantity})"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(product.quantity.toString())
+            setPadding(0, 30, 0, 0)
+        }
+
+        container.addView(inputPrice)
+        container.addView(inputQuantity)
+
+        AlertDialog.Builder(this)
+            .setTitle("Edit Product - ${product.name}")
+            .setMessage("Current: ${"$%.2f".format(product.price)} | Stock: ${product.quantity}")
+            .setView(container)
+            .setPositiveButton("Update") { _, _ ->
+                val newPrice = inputPrice.text.toString().toDoubleOrNull() ?: -1.0
+                val newQuantity = inputQuantity.text.toString().toIntOrNull() ?: -1
+                
+                if (newPrice <= 0) {
+                    Toast.makeText(this, "Invalid price", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
                 if (newQuantity < 0) {
                     Toast.makeText(this, "Invalid quantity", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
@@ -115,26 +139,26 @@ class MainActivity : AppCompatActivity() {
                             deleteProductFromDB(product.name)
                         }
                         .setNegativeButton("Keep with 0") { _, _ ->
-                            updateProductQuantity(product.name, 0)
+                            updateProduct(product.name, newPrice, 0)
                         }
                         .show()
                 } else {
-                    updateProductQuantity(product.name, newQuantity)
+                    updateProduct(product.name, newPrice, newQuantity)
                 }
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    private fun updateProductQuantity(productName: String, newQuantity: Int) {
+    private fun updateProduct(productName: String, newPrice: Double, newQuantity: Int) {
         try {
-            databaseHelper.updateProductQuantityByName(productName, newQuantity)
-            Log.d(TAG, "✅ Cantidad actualizada: $productName -> $newQuantity")
+            databaseHelper.updateProductByName(productName, newPrice, newQuantity)
+            Log.d(TAG, "✅ Producto actualizado: $productName -> Price: $newPrice, Qty: $newQuantity")
             loadProductsFromDatabase()
-            Toast.makeText(this, "Quantity updated", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Product updated", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error updating quantity: ${e.message}", e)
-            Toast.makeText(this, "Error updating quantity", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "❌ Error updating product: ${e.message}", e)
+            Toast.makeText(this, "Error updating product", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -156,7 +180,7 @@ class MainActivity : AppCompatActivity() {
             productsList.clear()
             productsList.addAll(products)
             productAdapter.notifyDataSetChanged()
-
+            
             // LOG: Mostrar todos los productos en la base de datos
             val productsWithId = databaseHelper.getAllProductsWithId()
             Log.d(TAG, "═══════════════════════════════════════")
@@ -165,7 +189,7 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, "ID: ${product.id} | Name: ${product.name} | Price: $${product.price} | Qty: ${product.quantity}")
             }
             Log.d(TAG, "═══════════════════════════════════════")
-
+            
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error loading products: ${e.message}", e)
             Toast.makeText(this@MainActivity, "Error loading products", Toast.LENGTH_SHORT).show()
@@ -189,19 +213,19 @@ class MainActivity : AppCompatActivity() {
                     // Insertar en la base de datos
                     val newProduct = Products(name, price, quantity, imagenResId)
                     val newId = databaseHelper.insertProduct(newProduct)
-
+                    
                     Log.d(TAG, "✅ PRODUCTO AGREGADO:")
                     Log.d(TAG, "   ID generado: $newId | Name: $name | Price: $$price | Qty: $quantity")
-
+                    
                     // Recargar productos
                     loadProductsFromDatabase()
-
+                    
                     // Ensure delete mode is off after adding a product
                     isDeleteMode = false
                     productAdapter.isDeleteMode = false
                     overlayView.visibility = View.GONE
                     findViewById<Button>(R.id.btnAdd).isEnabled = true
-
+                    
                     Toast.makeText(this@MainActivity, "Product added successfully", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
@@ -239,7 +263,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val namesDisplay = productNames.joinToString(", ")
-
+        
         AlertDialog.Builder(this)
             .setTitle("Warning!")
             .setMessage("Are you sure you want to delete $namesDisplay?")
@@ -249,12 +273,12 @@ class MainActivity : AppCompatActivity() {
                     productNames.forEach { name ->
                         Log.d(TAG, "   Deleting: $name")
                     }
-
+                    
                     val deletedCount = databaseHelper.deleteProductsByNames(productNames)
                     Log.d(TAG, "✅ $deletedCount productos eliminados exitosamente")
-
+                    
                     loadProductsFromDatabase()
-
+                    
                     productAdapter.selectedPositions.clear()
                     isDeleteMode = false
                     productAdapter.isDeleteMode = false

@@ -14,6 +14,7 @@ class ProductAdapter(
     var isDeleteMode: Boolean = false
 ) : RecyclerView.Adapter<ProductAdapter.ProductViewHolder>() {
     var onItemClick: ((List<Int>) -> Unit)? = null
+    var onItemLongClick: ((Products) -> Unit)? = null  // Para editar producto
     var selectedPositions: MutableList<Int> = mutableListOf()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProductViewHolder {
@@ -51,7 +52,18 @@ class ProductAdapter(
                 notifyDataSetChanged()
                 onItemClick?.invoke(selectedPositions)
             } else {
-                onItemClick?.invoke(emptyList())
+                // Click normal - abrir para editar
+                onItemLongClick?.invoke(product)
+            }
+        }
+
+        // Long click para editar (funcionalidad alternativa)
+        holder.itemView.setOnLongClickListener {
+            if (!isDeleteMode) {
+                onItemLongClick?.invoke(product)
+                true
+            } else {
+                false
             }
         }
     }

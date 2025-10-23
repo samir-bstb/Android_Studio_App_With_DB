@@ -1,5 +1,6 @@
 package com.up.proyectop2
 
+import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
@@ -104,20 +105,19 @@ class DatabaseHelper(private val context: Context) : SQLiteOpenHelper(
 
     // Insertar un producto
     fun insertProduct(product: Products): Long {
-        val db = writableDatabase
-        db.execSQL(
-            "INSERT INTO $TABLE_PRODUCTS ($COLUMN_NAME, $COLUMN_PRICE, $COLUMN_QUANTITY, $COLUMN_IMAGE_RES_ID) VALUES (?, ?, ?, ?)",
-            arrayOf(product.name, product.price, product.quantity, product.imagenResId)
-        )
-
-        // Obtener el ID del último registro insertado
-        val cursor = db.rawQuery("SELECT last_insert_rowid()", null)
-        var id = -1L
-        if (cursor.moveToFirst()) {
-            id = cursor.getLong(0)
+        if (productExists(product.name)) {
+            return -1L // Retorna -1 si el producto ya existe
         }
-        cursor.close()
-        return id
+
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_NAME, product.name)
+            put(COLUMN_PRICE, product.price)
+            put(COLUMN_QUANTITY, product.quantity)
+            put(COLUMN_IMAGE_RES_ID, product.imagenResId)
+        }
+
+        return db.insert(TABLE_PRODUCTS, null, values)
     }
 
     // Verificar si existe un producto por nombre
@@ -179,31 +179,29 @@ class DatabaseHelper(private val context: Context) : SQLiteOpenHelper(
     // Actualizar cantidad de un producto por nombre
     fun updateProductQuantityByName(name: String, newQuantity: Int): Int {
         val db = writableDatabase
-        db.execSQL(
-            "UPDATE $TABLE_PRODUCTS SET $COLUMN_QUANTITY = ? WHERE $COLUMN_NAME = ?",
-            arrayOf(newQuantity, name)
-        )
-        return 1 // Retorna 1 si se actualizó correctamente
+        val values = ContentValues().apply {
+            put(COLUMN_QUANTITY, newQuantity)
+        }
+        return db.update(TABLE_PRODUCTS, values, "$COLUMN_NAME = ?", arrayOf(name))
     }
 
     // Actualizar precio de un producto por nombre
     fun updateProductPriceByName(name: String, newPrice: Double): Int {
         val db = writableDatabase
-        db.execSQL(
-            "UPDATE $TABLE_PRODUCTS SET $COLUMN_PRICE = ? WHERE $COLUMN_NAME = ?",
-            arrayOf(newPrice, name)
-        )
-        return 1 // Retorna 1 si se actualizó correctamente
+        val values = ContentValues().apply {
+            put(COLUMN_PRICE, newPrice)
+        }
+        return db.update(TABLE_PRODUCTS, values, "$COLUMN_NAME = ?", arrayOf(name))
     }
 
     // Actualizar precio y cantidad de un producto por nombre
     fun updateProductByName(name: String, newPrice: Double, newQuantity: Int): Int {
         val db = writableDatabase
-        db.execSQL(
-            "UPDATE $TABLE_PRODUCTS SET $COLUMN_PRICE = ?, $COLUMN_QUANTITY = ? WHERE $COLUMN_NAME = ?",
-            arrayOf(newPrice, newQuantity, name)
-        )
-        return 1 // Retorna 1 si se actualizó correctamente
+        val values = ContentValues().apply {
+            put(COLUMN_PRICE, newPrice)
+            put(COLUMN_QUANTITY, newQuantity)
+        }
+        return db.update(TABLE_PRODUCTS, values, "$COLUMN_NAME = ?", arrayOf(name))
     }
 
     // Obtener un producto por nombre

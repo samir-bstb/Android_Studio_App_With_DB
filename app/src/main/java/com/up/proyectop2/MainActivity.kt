@@ -204,28 +204,26 @@ class MainActivity : AppCompatActivity() {
             val quantity = data?.getIntExtra("quantity", 0) ?: 0
             val imagenResId = data?.getIntExtra("imagenResId", R.drawable.error) ?: R.drawable.error
 
-            // Verificar si el producto ya existe en la base de datos
             try {
-                if (databaseHelper.productExists(name)) {
+                val newProduct = Products(name, price, quantity, imagenResId)
+                val newId = databaseHelper.insertProduct(newProduct)
+
+                if (newId == -1L) {
                     Log.w(TAG, "⚠️ Producto duplicado: $name ya existe")
                     Toast.makeText(this@MainActivity, "Product already in stock", Toast.LENGTH_SHORT).show()
                 } else {
-                    // Insertar en la base de datos
-                    val newProduct = Products(name, price, quantity, imagenResId)
-                    val newId = databaseHelper.insertProduct(newProduct)
-                    
                     Log.d(TAG, "✅ PRODUCTO AGREGADO:")
                     Log.d(TAG, "   ID generado: $newId | Name: $name | Price: $$price | Qty: $quantity")
-                    
+
                     // Recargar productos
                     loadProductsFromDatabase()
-                    
+
                     // Ensure delete mode is off after adding a product
                     isDeleteMode = false
                     productAdapter.isDeleteMode = false
                     overlayView.visibility = View.GONE
                     findViewById<Button>(R.id.btnAdd).isEnabled = true
-                    
+
                     Toast.makeText(this@MainActivity, "Product added successfully", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {

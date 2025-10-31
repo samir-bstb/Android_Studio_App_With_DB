@@ -75,14 +75,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showEditOptions(product: Products) {
-        val options = arrayOf("Edit Product", "Delete Product")
+        val options = arrayOf("Edit Product")
         
         AlertDialog.Builder(this)
             .setTitle(product.name)
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> showEditProductDialog(product)
-                    1 -> showDeleteConfirmation(listOf(product.name))
                 }
             }
             .show()
@@ -93,7 +92,7 @@ class MainActivity : AppCompatActivity() {
         val dialogView = layoutInflater.inflate(android.R.layout.select_dialog_item, null)
         val container = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(50, 40, 50, 10)
+            setPadding(50, 40, 50, 20)
         }
 
         val inputPrice = EditText(this).apply {
@@ -106,7 +105,6 @@ class MainActivity : AppCompatActivity() {
             hint = "Quantity (current: ${product.quantity})"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
             setText(product.quantity.toString())
-            setPadding(0, 30, 0, 0)
         }
 
         container.addView(inputPrice)

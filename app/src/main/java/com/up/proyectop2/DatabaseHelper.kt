@@ -136,22 +136,6 @@ class DatabaseHelper(private val context: Context) : SQLiteOpenHelper(
         return exists
     }
 
-    // Obtener ID de un producto por nombre
-    fun getProductIdByName(name: String): Int? {
-        val db = readableDatabase
-        val cursor = db.rawQuery(
-            "SELECT $COLUMN_ID FROM $TABLE_PRODUCTS WHERE $COLUMN_NAME = ?",
-            arrayOf(name)
-        )
-
-        var productId: Int? = null
-        if (cursor.moveToFirst()) {
-            productId = cursor.getInt(0)
-        }
-        cursor.close()
-        return productId
-    }
-
     // Eliminar un producto por nombre
     fun deleteProductByName(name: String): Int {
         val db = writableDatabase
@@ -176,24 +160,6 @@ class DatabaseHelper(private val context: Context) : SQLiteOpenHelper(
         return deletedCount
     }
 
-    // Actualizar cantidad de un producto por nombre
-    fun updateProductQuantityByName(name: String, newQuantity: Int): Int {
-        val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_QUANTITY, newQuantity)
-        }
-        return db.update(TABLE_PRODUCTS, values, "$COLUMN_NAME = ?", arrayOf(name))
-    }
-
-    // Actualizar precio de un producto por nombre
-    fun updateProductPriceByName(name: String, newPrice: Double): Int {
-        val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_PRICE, newPrice)
-        }
-        return db.update(TABLE_PRODUCTS, values, "$COLUMN_NAME = ?", arrayOf(name))
-    }
-
     // Actualizar precio y cantidad de un producto por nombre
     fun updateProductByName(name: String, newPrice: Double, newQuantity: Int): Int {
         val db = writableDatabase
@@ -204,28 +170,4 @@ class DatabaseHelper(private val context: Context) : SQLiteOpenHelper(
         return db.update(TABLE_PRODUCTS, values, "$COLUMN_NAME = ?", arrayOf(name))
     }
 
-    // Obtener un producto por nombre
-    fun getProductByName(name: String): Products? {
-        val db = readableDatabase
-        val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_PRODUCTS WHERE $COLUMN_NAME = ?",
-            arrayOf(name)
-        )
-
-        var product: Products? = null
-        try {
-            if (cursor.moveToFirst()) {
-                val productName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME))
-                val price = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_PRICE))
-                val quantity = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_QUANTITY))
-                val imagenResId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_IMAGE_RES_ID))
-
-                product = Products(productName, price, quantity, imagenResId)
-            }
-        } finally {
-            cursor.close()
-        }
-
-        return product
-    }
 }
